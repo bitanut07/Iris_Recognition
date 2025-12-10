@@ -28,14 +28,14 @@ from torch import optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
-# Add template repo to path to reuse its modules
-TEMPLATE_ROOT = Path(__file__).resolve().parent.parent / "CodeTemplate" / "Pytorch-UNet"
-sys.path.append(str(TEMPLATE_ROOT))
+# Allow importing local modules as a package
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(REPO_ROOT))
 
-from evaluate import evaluate  # type: ignore  # noqa: E402
-from unet import UNet  # type: ignore  # noqa: E402
-from utils.data_loading import BasicDataset  # type: ignore  # noqa: E402
-from utils.dice_score import dice_loss  # type: ignore  # noqa: E402
+from unet.unet_model import UNet  # noqa: E402
+from utils.data_loading import BasicDataset  # noqa: E402
+from utils.dice_score import dice_loss  # noqa: E402
+from utils.evaluate import evaluate  # noqa: E402
 
 DEFAULT_DATA_ROOT = Path(__file__).resolve().parent.parent / "datasets" / "MMU"
 CHECKPOINT_DIR = Path(__file__).resolve().parent.parent / "checkpoints" / "mmu"

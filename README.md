@@ -201,3 +201,5 @@ Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE`
 ---
 
 **Lưu ý**: Dự án này chỉ dành cho mục đích nghiên cứu và giáo dục. Việc sử dụng trong môi trường sản xuất cần được đánh giá kỹ lưỡng về bảo mật và hiệu suất.
+
+deactivate
