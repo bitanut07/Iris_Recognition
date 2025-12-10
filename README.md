@@ -4,6 +4,29 @@
 
 Dự án Iris Recognition là một hệ thống nhận dạng mống mắt sử dụng trí tuệ nhân tạo và xử lý hình ảnh để xác thực danh tính người dùng. Hệ thống này có thể được ứng dụng trong các lĩnh vực bảo mật cao như kiểm soát truy cập, xác thực sinh trắc học, và các hệ thống an ninh.
 
+## Hướng dẫn nhanh: Segmentation với MMU (U-Net)
+
+1) Chuẩn bị môi trường  
+   - Kích hoạt venv (nếu có): `source venv/bin/activate`  
+   - Cài đặt: `pip install -r requirements.txt`
+
+2) Tải và sắp xếp dataset  
+   - Chạy: `python downLoadDataset.py`  
+   - Sau khi chạy sẽ có:
+     - `datasets/MMU/raw/`   (gốc từ Kaggle)  
+     - `datasets/MMU/imgs/`  (ảnh .bmp đã flatten, không còn subfolder)  
+     - `datasets/MMU/masks/` (mask sinh tự động bằng heuristic; hãy thay bằng ground-truth nếu có)  
+
+3) Train U-Net  
+   - Ảnh MMU đang là RGB → nên dùng 3 kênh:  
+     `python models/segmentation.py --epochs 20 --batch-size 4 --scale 1.0 --channels 3 --classes 2 --amp`
+   - Nếu dùng ảnh/grayscale riêng, có thể đặt `--channels 1` (ảnh phải thực sự đơn kênh).  
+   - Checkpoint lưu tại `checkpoints/mmu/`.
+
+4) Tuỳ chọn làm lại dữ liệu  
+   - Nếu đã tự chuẩn bị `imgs/` và `masks/`, không cần chạy lại downloader.  
+   - Muốn ép chuẩn bị lại (flatten + sinh mask heuristic): chạy segmentation với `--force-prepare`.
+
 ## Tính năng chính
 
 - **Thu thập dữ liệu mống mắt**: Chụp và xử lý hình ảnh mống mắt chất lượng cao
@@ -43,7 +66,7 @@ source venv/bin/activate  # Linux/Mac
 # hoặc
 venv\Scripts\activate     # Windows
 
-# Cài đặt các package cần thiết
+# Cài đặt các package cần thiếtM
 pip install -r requirements.txt
 ```
 
