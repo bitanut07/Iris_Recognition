@@ -145,14 +145,18 @@ def train(
         dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0)
     )
 
-    loader_args = dict(
-        batch_size=batch_size, num_workers=min(4, os.cpu_count() or 1), pin_memory=True
-    )
+    use_cuda = torch.cuda.is_available()
+    pin_mem = use_cuda
+    workers = min(4, os.cpu_count() or 1) if use_cuda else 0
+    loader_args = dict(batch_size=batch_size, num_workers=workers, pin_memory=pin_mem)
     train_loader = DataLoader(train_set, shuffle=True, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if use_cuda else "cpu")
     logging.info(f"Using device: {device}")
+
+    if use_cuda:
+        torch.backends.cudnn.benchmark = True
 
     model = UNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
     model = model.to(memory_format=torch.channels_last).to(device=device)
@@ -172,7 +176,8 @@ def train(
         model.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9, foreach=True
     )
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience=5)
-    grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    amp_enabled = amp and use_cuda
+    grad_scaler = torch.amp.GradScaler("cuda", enabled=amp_enabled)
     criterion = nn.CrossEntropyLoss() if n_classes > 1 else nn.BCEWithLogitsLoss()
     global_step = 0
 
@@ -190,7 +195,7 @@ def train(
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
                 true_masks = true_masks.to(device=device, dtype=torch.long)
 
-                with torch.autocast(device.type if device.type != "mps" else "cpu", enabled=amp):
+                with torch.autocast(device_type=device.type, enabled=amp_enabled):
                     masks_pred = model(images)
                     if model.n_classes == 1:
                         loss = criterion(masks_pred.squeeze(1), true_masks.float())
