@@ -14,6 +14,8 @@ import numpy as np
 import torch
 from pymongo import MongoClient
 from pymongo.collection import Collection
+import certifi
+from pymongo.errors import ServerSelectionTimeoutError, PyMongoError
 
 class FaissMongoVectorDB:
     """
@@ -51,16 +53,35 @@ class FaissMongoVectorDB:
         mongo_url = os.getenv("MONGODB_URL")
         if not mongo_url:
             raise EnvironmentError("MONGODB_URL environment variable is not set")
-
-        self.client = MongoClient(mongo_url)
+        # Prefer an explicit TLS connection using certifi's CA bundle to avoid
+        # problems with local system CA stores or OpenSSL builds that don't
+        # trust the server certificate used by MongoDB Atlas.
+        try:
+            self.client = MongoClient(
+                mongo_url,
+                tls=True,
+                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=30000,
+            )
+        except TypeError:
+            # Older pymongo may not accept tls* kwargs; fall back to default
+            # behavior and let pymongo decide. Keep serverSelectionTimeoutMS
+            # to avoid long blocking hangs.
+            self.client = MongoClient(mongo_url, serverSelectionTimeoutMS=30000)
         self.db = self.client[mongo_db_name]
         self.collection: Collection = self.db[mongo_collection_name]
 
         # Internal mapping from FAISS index position -> user_id
         self.user_ids: List[str] = []
 
-        # Load existing embeddings from MongoDB into FAISS
-        self._load_from_mongo()
+        # Load existing embeddings from MongoDB into FAISS. If the MongoDB
+        # server is unreachable or TLS handshake fails, we catch the error
+        # and continue with an empty in-memory index so the demo can still run.
+        try:
+            self._load_from_mongo()
+        except (ServerSelectionTimeoutError, PyMongoError) as e:
+            # Avoid importing logging config; print a clear warning instead.
+            print(f"Warning: could not load embeddings from MongoDB: {e}\n" "Continuing with an empty FAISS index.")
 
     def _to_numpy(self, emb: torch.Tensor) -> np.ndarray:
         if emb.ndim == 1:

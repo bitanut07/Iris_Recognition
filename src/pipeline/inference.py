@@ -16,6 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
+from PIL import Image
 
 from src.models.segmentation import SegmentationModel
 from src.models.recognition import RecognitionModelWrapper
@@ -114,12 +115,22 @@ class BiometricPipeline:
             mask_3d = mask_np[:, :, None].astype(np.float32)
             roi_np = frame_np * mask_3d
 
-        # Convert back to tensor and apply transforms
-        roi_tensor = torch.from_numpy(roi_np).float() / 255.0  # [H, W, 3]
-        roi_tensor = roi_tensor.permute(2, 0, 1)  # [3, H, W]
-        roi_tensor = self.transform(roi_tensor)  # [3, H', W']
-        roi_tensor = roi_tensor.unsqueeze(0)  # [1, 3, H', W']
-        return roi_tensor
+        # Convert ROI (numpy H,W,3) to a PIL Image before transforms.
+        # Handle dtype/range robustness: roi_np may be float in [0,1] (mock frames)
+        # or uint8 in [0,255]. Ensure uint8 HxWx3 for Image.fromarray.
+        if np.issubdtype(roi_np.dtype, np.floating):
+            maxv = roi_np.max() if roi_np.size else 0.0
+            if maxv <= 1.0:
+                roi_uint8 = (roi_np * 255.0).round().astype(np.uint8)
+            else:
+                roi_uint8 = roi_np.round().astype(np.uint8)
+        else:
+            roi_uint8 = roi_np.astype(np.uint8)
+
+        pil = Image.fromarray(roi_uint8)
+        tensor = self.transform(pil)  # [3, H', W']
+        tensor = tensor.unsqueeze(0)  # [1, 3, H', W']
+        return tensor
 
     @torch.no_grad()
     def frame_to_embedding(self, frame: torch.Tensor) -> torch.Tensor:

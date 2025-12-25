@@ -6,25 +6,28 @@ Dự án Iris Recognition là một hệ thống nhận dạng mống mắt sử
 
 ## Hướng dẫn nhanh: Segmentation với MMU (U-Net)
 
-1) Chuẩn bị môi trường  
-   - Kích hoạt venv (nếu có): `source venv/bin/activate`  
+1. Chuẩn bị môi trường
+
+   - Kích hoạt venv (nếu có): `source venv/bin/activate`
    - Cài đặt: `pip install -r requirements.txt`
 
-2) Tải và sắp xếp dataset  
-   - Chạy: `python downLoadDataset.py`  
-   - Sau khi chạy sẽ có:
-     - `datasets/MMU/raw/`   (gốc từ Kaggle)  
-     - `datasets/MMU/imgs/`  (ảnh .bmp đã flatten, không còn subfolder)  
-     - `datasets/MMU/masks/` (mask sinh tự động bằng heuristic; hãy thay bằng ground-truth nếu có)  
+2. Tải và sắp xếp dataset
 
-3) Train U-Net  
+   - Chạy: `python downLoadDataset.py`
+   - Sau khi chạy sẽ có:
+     - `datasets/MMU/raw/` (gốc từ Kaggle)
+     - `datasets/MMU/imgs/` (ảnh .bmp đã flatten, không còn subfolder)
+     - `datasets/MMU/masks/` (mask sinh tự động bằng heuristic; hãy thay bằng ground-truth nếu có)
+
+3. Train U-Net
+
    - Ảnh MMU đang là RGB → nên dùng 3 kênh:  
      `python models/segmentation.py --epochs 20 --batch-size 4 --scale 1.0 --channels 3 --classes 2 --amp`
-   - Nếu dùng ảnh/grayscale riêng, có thể đặt `--channels 1` (ảnh phải thực sự đơn kênh).  
+   - Nếu dùng ảnh/grayscale riêng, có thể đặt `--channels 1` (ảnh phải thực sự đơn kênh).
    - Checkpoint lưu tại `checkpoints/mmu/`.
 
-4) Tuỳ chọn làm lại dữ liệu  
-   - Nếu đã tự chuẩn bị `imgs/` và `masks/`, không cần chạy lại downloader.  
+4. Tuỳ chọn làm lại dữ liệu
+   - Nếu đã tự chuẩn bị `imgs/` và `masks/`, không cần chạy lại downloader.
    - Muốn ép chuẩn bị lại (flatten + sinh mask heuristic): chạy segmentation với `--force-prepare`.
 
 ## Tính năng chính
@@ -48,6 +51,7 @@ Dự án Iris Recognition là một hệ thống nhận dạng mống mắt sử
 ## Cài đặt
 
 ### Yêu cầu hệ thống
+
 - Python 3.7+
 - Camera hoặc thiết bị chụp ảnh mống mắt
 - RAM: Tối thiểu 4GB (khuyến nghị 8GB+)
@@ -71,6 +75,7 @@ pip install -r requirements.txt
 ```
 
 ### File requirements.txt
+
 ```
 opencv-python==4.8.1.78
 numpy==1.24.3
@@ -83,21 +88,25 @@ flask==2.3.3
 ## Cách sử dụng
 
 ### 1. Thu thập dữ liệu
+
 ```bash
 python data_collection.py
 ```
 
 ### 2. Huấn luyện mô hình
+
 ```bash
 python train_model.py
 ```
 
 ### 3. Nhận dạng mống mắt
+
 ```bash
 python iris_recognition.py
 ```
 
 ### 4. Chạy ứng dụng web (nếu có)
+
 ```bash
 python app.py
 ```
@@ -133,17 +142,20 @@ iris-recognition/
 ## Thuật toán chính
 
 ### 1. Tiền xử lý
+
 - Phát hiện vùng mống mắt
 - Chuẩn hóa kích thước và định hướng
 - Lọc nhiễu và tăng cường độ tương phản
 
 ### 2. Trích xuất đặc trưng
+
 - Gabor filters
 - Local Binary Patterns (LBP)
 - Hough Transform
 - Deep learning features (CNN)
 
 ### 3. Phân loại
+
 - Support Vector Machine (SVM)
 - Random Forest
 - Neural Networks
@@ -203,3 +215,5 @@ Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE`
 **Lưu ý**: Dự án này chỉ dành cho mục đích nghiên cứu và giáo dục. Việc sử dụng trong môi trường sản xuất cần được đánh giá kỹ lưỡng về bảo mật và hiệu suất.
 
 deactivate
+
+source venv/bin/activate
